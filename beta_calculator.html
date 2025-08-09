@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Army Unit Calculation</title>
+    <title>Подбор состава армии</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
@@ -11,6 +11,11 @@
         th, td { padding: 8px; text-align: center; }
         th { background-color: #f4f4f4; }
         .output { margin-top: 20px; font-size: 1.2em; }
+        .unit-selector { margin-top: 10px; }
+        .unit-row { margin-bottom: 10px; }
+        .btn { padding: 5px 15px; cursor: pointer; }
+        .btn-remove { background-color: red; color: white; }
+        .btn-add { background-color: green; color: white; }
     </style>
 </head>
 <body>
@@ -20,6 +25,33 @@
     <label for="leadership">Введите общее значение лидерства:</label>
     <input type="number" id="leadership" name="leadership" min="1" placeholder="Введите число">
     <button onclick="calculateArmy()">Рассчитать</button>
+
+    <div class="unit-selector">
+        <h3>Добавить юнита</h3>
+        <div id="unitList">
+            <div class="unit-row">
+                <select class="unit-type">
+                    <option value="Archer">Лучник</option>
+                    <option value="Spearman">Копейщик</option>
+                    <option value="Rider">Наездник</option>
+                    <option value="BattleGriffin">Боевой Грифон</option>
+                </select>
+                <select class="unit-level">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                </select>
+                <button class="btn btn-remove" onclick="removeUnit(this)">Удалить</button>
+            </div>
+        </div>
+        <button class="btn btn-add" onclick="addUnit()">Добавить юнита</button>
+    </div>
 
     <div class="output" id="output"></div>
 
@@ -70,6 +102,40 @@
             }
         }
 
+        // Функция для добавления нового юнита
+        function addUnit() {
+            const unitList = document.getElementById('unitList');
+            const newUnitRow = document.createElement('div');
+            newUnitRow.classList.add('unit-row');
+            newUnitRow.innerHTML = `
+                <select class="unit-type">
+                    <option value="Archer">Лучник</option>
+                    <option value="Spearman">Копейщик</option>
+                    <option value="Rider">Наездник</option>
+                    <option value="BattleGriffin">Боевой Грифон</option>
+                </select>
+                <select class="unit-level">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                </select>
+                <button class="btn btn-remove" onclick="removeUnit(this)">Удалить</button>
+            `;
+            unitList.appendChild(newUnitRow);
+        }
+
+        // Функция для удаления юнита
+        function removeUnit(button) {
+            const unitRow = button.closest('.unit-row');
+            unitRow.remove();
+        }
+
         // Функция для расчёта состава армии
         function calculateArmy() {
             const leadership = parseInt(document.getElementById('leadership').value);
@@ -78,20 +144,21 @@
                 return;
             }
 
-            // Создаём юнитов
-            const army = [
-                new Unit("Archer", 7),
-                new Unit("Spearman", 5),
-                new Unit("Rider", 5),
-                new Unit("BattleGriffin", 5),
-                new Unit("BattleGriffin", 6)
-            ];
+            const units = [];
+
+            // Получаем все юниты из интерфейса
+            const unitRows = document.querySelectorAll('.unit-row');
+            unitRows.forEach(row => {
+                const unitType = row.querySelector('.unit-type').value;
+                const unitLevel = parseInt(row.querySelector('.unit-level').value);
+                units.push(new Unit(unitType, unitLevel));
+            });
 
             // Выполняем расчёты
-            const units = getUnitCounts(leadership, army);
+            const army = getUnitCounts(leadership, units);
 
             // Выводим результаты
-            displayResults(units, leadership);
+            displayResults(army, leadership);
         }
 
         // Функция для вычисления количества юнитов
