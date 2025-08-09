@@ -2,8 +2,7 @@ import math
 
 
 class Archer():           
-
-    def __init__(self,level):
+    def __init__(self, level):
         self.level = level
         self.name = f"archer({self.level})" 
         strength_values = {
@@ -21,9 +20,10 @@ class Archer():
         self.leadership = 1   
         self.hp = self.strength * 3
         self.hp_per_lead = math.floor(self.hp / self.leadership)
-class Spearman():           
 
-    def __init__(self,level):
+
+class Spearman():           
+    def __init__(self, level):
         self.level = level
         self.name = f"spearman({self.level})" 
         strength_values = {
@@ -44,8 +44,7 @@ class Spearman():
 
 
 class Rider():           
-
-    def __init__(self,level):
+    def __init__(self, level):
         self.level = level
         self.name = f"rider({self.level})"        
         strength_values = {
@@ -65,8 +64,7 @@ class Rider():
         self.hp_per_lead = math.floor(self.hp / self.leadership) # соотношение хп юнита к его показателю требуемого лидерства
 
 
-class Battle_griffin():           
-
+class Battle_griffin():
     def __init__(self,level):
         self.level = level
         self.name = f"battle_griffin({self.level})" 
@@ -112,7 +110,9 @@ def get_counts(leadership, *squads, step=0, n=0):
         
     return print(f"среднее арифм: {arithmetic_mean}, здоровье отряда: {hp_per_squad}, кол-во рекурсий:{n}, требуемое лидерство: {required_leadership}")
     
+input_lead = int(input("Введите лидерство: "))
 
-get_counts(3000, *squads)
+get_counts(input_lead, *squads)
+
 for squad in squads:
     print (f"{squad.name}: {squad.count_warriors}, health: {squad.count_warriors * squad.hp}, strength: {squad.count_warriors * squad.strength}")
