@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Army Unit Calculation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 8px; text-align: center; }
+        th { background-color: #f4f4f4; }
+        .output { margin-top: 20px; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+
+    <h1>Подбор состава армии</h1>
+
+    <label for="leadership">Введите общее значение лидерства:</label>
+    <input type="number" id="leadership" name="leadership" min="1" placeholder="Введите число">
+    <button onclick="calculateArmy()">Рассчитать</button>
+
+    <div class="output" id="output"></div>
+
+    <table id="armyTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Тип юнита</th>
+                <th>Количество</th>
+                <th>Общее HP</th>
+                <th>Общая сила</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Данные о юнитах
+        const UNIT_STATS = {
+            "Archer": {
+                "leadership": 1,
+                "strength_by_level": { 1: 50, 2: 90, 3: 160, 4: 290, 5: 520, 6: 940, 7: 1700, 8: 3060, 9: 5510 }
+            },
+            "Spearman": {
+                "leadership": 1,
+                "strength_by_level": { 1: 50, 2: 90, 3: 160, 4: 290, 5: 520, 6: 940, 7: 1700, 8: 3060, 9: 5510 }
+            },
+            "Rider": {
+                "leadership": 2,
+                "strength_by_level": { 1: 100, 2: 180, 3: 320, 4: 580, 5: 1050, 6: 1900, 7: 3400, 8: 6120, 9: 11020 }
+            },
+            "BattleGriffin": {
+                "leadership": 20,
+                "strength_by_level": { 5: 10000, 6: 19000, 7: 34000, 8: 61200, 9: 110200 }
+            }
+        };
+
+        // Класс для юнита
+        class Unit {
+            constructor(unitType, level) {
+                this.unitType = unitType;
+                this.level = level;
+                this.name = `${unitType}(${level})`;
+                this.leadership = UNIT_STATS[unitType].leadership;
+                this.strength = UNIT_STATS[unitType].strength_by_level[level] || 0;
+                this.hp = this.strength * 3;
+                this.hpPerLead = Math.floor(this.hp / this.leadership);
+                this.count = 0;  // Расчитываем позже
+            }
+        }
+
+        // Функция для расчёта состава армии
+        function calculateArmy() {
+            const leadership = parseInt(document.getElementById('leadership').value);
+            if (isNaN(leadership) || leadership <= 0) {
+                alert("Пожалуйста, введите корректное значение лидерства.");
+                return;
+            }
+
+            // Создаём юнитов
+            const army = [
+                new Unit("Archer", 7),
+                new Unit("Spearman", 5),
+                new Unit("Rider", 5),
+                new Unit("BattleGriffin", 5),
+                new Unit("BattleGriffin", 6)
+            ];
+
+            // Выполняем расчёты
+            const units = getUnitCounts(leadership, army);
+
+            // Выводим результаты
+            displayResults(units, leadership);
+        }
+
+        // Функция для вычисления количества юнитов
+        function getUnitCounts(totalLeadership, units, step = 0, recursionDepth = 0) {
+            const numUnits = units.length;
+            const leadershipPerUnit = Math.floor(totalLeadership / numUnits);
+            const avgHpPerLead = Math.floor(units.reduce((sum, unit) => sum + unit.hpPerLead, 0) / numUnits) - step;
+            const squadHp = avgHpPerLead * leadershipPerUnit;
+
+            let requiredLeadership = 0;
+
+            // Подсчёт количества юнитов
+            units.forEach(unit => {
+                unit.count = Math.floor(squadHp / unit.hp);
+                requiredLeadership += unit.count * unit.leadership;
+            });
+
+            // Если лидерства не хватает, пытаемся перерасчитать
+            if (requiredLeadership > totalLeadership) {
+                return getUnitCounts(totalLeadership, units, step + 10, recursionDepth + 1);
+            }
+
+            return units;
+        }
+
+        // Функция для отображения результатов
+        function displayResults(units, leadership) {
+            const output = document.getElementById('output');
+            const armyTable = document.getElementById('armyTable');
+            const tbody = armyTable.querySelector('tbody');
+
+            // Очищаем таблицу перед новым выводом
+            tbody.innerHTML = '';
+
+            let totalRequiredLeadership = 0;
+            let totalWarriors = 0;
+
+            units.forEach(unit => {
+                const totalHp = unit.count * unit.hp;
+                const totalStrength = unit.count * unit.strength;
+
+                // Добавляем строку в таблицу
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${unit.name}</td>
+                    <td>${unit.count}</td>
+                    <td>${totalHp}</td>
+                    <td>${totalStrength}</td>
+                `;
+                tbody.appendChild(row);
+
+                totalRequiredLeadership += unit.count * unit.leadership;
+                totalWarriors += unit.count;
+            });
+
+            // Показываем таблицу
+            armyTable.style.display = 'table';
+
+            output.innerHTML = `
+                <p>Среднее количество хп на отряд: ${Math.floor(units.reduce((sum, unit) => sum + unit.hpPerLead, 0) / units.length)}</p>
+                <p>Общее количество бойцов: ${totalWarriors}</p>
+                <p>Общее потребление лидерства: ${totalRequiredLeadership}</p>
+                <p>Ожидаемое здоровье на отряд: ${Math.floor(totalRequiredLeadership / units.length)}</p>
+            `;
+        }
+    </script>
+</body>
+</html>
+
