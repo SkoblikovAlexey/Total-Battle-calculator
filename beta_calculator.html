@@ -15,7 +15,8 @@
         .unit-row { margin-bottom: 10px; }
         .btn { padding: 5px 15px; cursor: pointer; }
         .btn-remove { background-color: red; color: white; }
-        .btn-add { background-color: green; color: white; }
+        .btn-add { margin-bottom: 10px; background-color: green; color: white; }
+        .unit-lists { display: flex; flex-direction: row; gap: 20px; }
     </style>
 </head>
 <body>
@@ -28,29 +29,18 @@
 
     <div class="unit-selector">
         <h3>Добавить юнита</h3>
-        <div id="unitList">
-            <div class="unit-row">
-                <select class="unit-type">
-                    <option value="Archer">Лучник</option>
-                    <option value="Spearman">Копейщик</option>
-                    <option value="Rider">Наездник</option>
-                    <option value="BattleGriffin">Боевой Грифон</option>
-                </select>
-                <select class="unit-level">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                </select>
-                <button class="btn btn-remove" onclick="removeUnit(this)">Удалить</button>
+        <div class="unit-lists">
+            <div class="guard-list">
+                <h4>Гвардейцы</h4>                
+                <div id="guardList"></div>
+                <button class="btn btn-add" onclick="addGuard()">Добавить Гвардейца</button>
+            </div>
+            <div class="specialist-list">
+                <h4>Специалисты</h4>                
+                <div id="specialistList"></div>
+                <button class="btn btn-add" onclick="addSpecialist()">Добавить Специалиста</button>
             </div>
         </div>
-        <button class="btn btn-add" onclick="addUnit()">Добавить юнита</button>
     </div>
 
     <div class="output" id="output"></div>
@@ -85,7 +75,28 @@
             "BattleGriffin": {
                 "leadership": 20,
                 "strength_by_level": { 5: 10000, 6: 19000, 7: 34000, 8: 61200, 9: 110200 }
-            }
+            },
+            "Deadshot": {
+                "leadership": 1,
+                "strength_by_level": { 5: 520, 6: 940, 7: 1700, 8: 3060, 9: 5510 }
+            },
+            "Swordsman": {
+                "leadership": 1,
+                "strength_by_level": { 1: 50, 2: 90, 3: 160, 4: 290, 5: 520, 6: 940, 7: 1700, 8: 3060, 9: 5510 }
+            },
+            "LionRider": {
+                "leadership": 2,
+                "strength_by_level": { 5: 1050, 6: 1900, 7: 3400 }
+            },                        
+            "Vulture": {
+                "leadership": 2,
+                "strength_by_level": { 5: 520, 6: 940, 7: 1700 }
+            },
+            "RoyalLion": {
+                "leadership": 2,
+                "strength_by_level": { 1: 61200, 2: 110200 }
+            },
+
         };
 
         // Класс для юнита
@@ -102,13 +113,13 @@
             }
         }
 
-        // Функция для добавления нового юнита
-        function addUnit() {
-            const unitList = document.getElementById('unitList');
+        // Функция для добавления нового гвардейца
+        function addGuard() {
+            const guardList = document.getElementById('guardList');
             const newUnitRow = document.createElement('div');
             newUnitRow.classList.add('unit-row');
             newUnitRow.innerHTML = `
-                <select class="unit-type">
+                <select class="unit-type" onchange="updateLevelOptions(this)">
                     <option value="Archer">Лучник</option>
                     <option value="Spearman">Копейщик</option>
                     <option value="Rider">Наездник</option>
@@ -127,7 +138,71 @@
                 </select>
                 <button class="btn btn-remove" onclick="removeUnit(this)">Удалить</button>
             `;
-            unitList.appendChild(newUnitRow);
+            guardList.appendChild(newUnitRow);
+            updateLevelOptions(newUnitRow.querySelector('.unit-type')); // Обновляем уровни при добавлении
+        }
+
+        // Функция для добавления нового специалиста
+        function addSpecialist() {
+            const specialistList = document.getElementById('specialistList');
+            const newUnitRow = document.createElement('div');
+            newUnitRow.classList.add('unit-row');
+            newUnitRow.innerHTML = `
+                <select class="unit-type" onchange="updateLevelOptions(this)">
+                    <option value="Swordsman">Мечник</option>
+                    <option value="Deadshot">Элитный арбалетчик</option>
+                    <option value="LionRider">Всадник на льве</option>
+                    <option value="Vulture">Стервятник</option>
+                    <option value="RoyalLion">Королевский лев</option>
+                </select>
+                <select class="unit-level">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                </select>
+                <button class="btn btn-remove" onclick="removeUnit(this)">Удалить</button>
+            `;
+            specialistList.appendChild(newUnitRow);
+            updateLevelOptions(newUnitRow.querySelector('.unit-type')); // Обновляем уровни при добавлении
+        }
+
+        // Функция для обновления доступных уровней
+        function updateLevelOptions(selectElement) {
+            const unitType = selectElement.value;
+            const levelSelect = selectElement.closest('.unit-row').querySelector('.unit-level');
+
+            // Сбрасываем все опции
+            levelSelect.innerHTML = '';
+
+            // Добавляем уровни в зависимости от типа юнита
+            if (unitType === "BattleGriffin" || unitType === "LionRider" || unitType === "Vulture" || unitType === "Deadshot") {
+                for (let i = 5; i <= 9; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    levelSelect.appendChild(option);
+                }
+            } else if (unitType === "RoyalLion") {
+                for (let i = 1; i <= 2; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    levelSelect.appendChild(option);
+                }
+            } else {
+                for (let i = 1; i <= 9; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    levelSelect.appendChild(option);
+                }
+            }
         }
 
         // Функция для удаления юнита
@@ -146,9 +221,17 @@
 
             const units = [];
 
-            // Получаем все юниты из интерфейса
-            const unitRows = document.querySelectorAll('.unit-row');
-            unitRows.forEach(row => {
+            // Получаем все юниты из списка гвардейцев
+            const guardRows = document.querySelectorAll('#guardList .unit-row');
+            guardRows.forEach(row => {
+                const unitType = row.querySelector('.unit-type').value;
+                const unitLevel = parseInt(row.querySelector('.unit-level').value);
+                units.push(new Unit(unitType, unitLevel));
+            });
+
+            // Получаем все юниты из списка специалистов
+            const specialistRows = document.querySelectorAll('#specialistList .unit-row');
+            specialistRows.forEach(row => {
                 const unitType = row.querySelector('.unit-type').value;
                 const unitLevel = parseInt(row.querySelector('.unit-level').value);
                 units.push(new Unit(unitType, unitLevel));
