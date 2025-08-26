@@ -10,23 +10,28 @@
         table, th, td { border: 1px solid #ddd; }
         th, td { padding: 8px; text-align: center; }
         th { background-color: #f4f4f4; }
+        .input { margin-bottom: 10px; }
         .output { margin-top: 20px; font-size: 1.2em; }
         .unit-selector { margin-top: 10px; }
         .unit-row { margin-bottom: 10px; }
         .btn { padding: 5px 15px; cursor: pointer; }
         .btn-remove { background-color: red; color: white; }
         .btn-add { margin-bottom: 10px; background-color: green; color: white; }
+        .btn-calc { font-size: large; margin-top: 20px; margin-bottom: 10px; background-color: orange; }
         .unit-lists { display: flex; flex-direction: row; gap: 20px; }
     </style>
 </head>
 <body>
 
-    <h1>Подбор состава армии</h1>
-
-    <label for="leadership">Введите общее значение лидерства:</label>
-    <input type="number" id="leadership" name="leadership" min="1" placeholder="Введите число">
-    <button class="btn-add" onclick="calculateArmy()">Рассчитать</button>
-
+    <h1>Подбор состава армии</h1>    
+    <div class="input">
+        <label for="leadership">Введите общее значение лидерства:</label>
+        <input type="number" id="leadership" name="leadership" min="1" placeholder="Введите число">
+    </div>
+    <div class="input">
+        <label for="dominance">Введите общее значение превосходства:</label>
+        <input type="number" id="dominance" name="dominance" min="1" placeholder="Введите число">
+    </div>
     <div class="unit-selector">
         <h3>Добавить юнита</h3>
         <div class="unit-lists">
@@ -40,8 +45,15 @@
                 <div id="specialistList"></div>
                 <button class="btn btn-add" onclick="addSpecialist()">Добавить Специалиста</button>
             </div>
+            <div class="monsterlist-list">
+                <h4>Монстры</h4>                
+                <div id="monsterList"></div>
+                <button class="btn btn-add" onclick="addMonster()">Добавить Монстра</button>
+            </div>
         </div>
     </div>
+
+    <button class="btn btn-calc" onclick="calculateArmy()">Рассчитать</button>
 
     <div class="output" id="output"></div>
 
@@ -96,7 +108,22 @@
                 "leadership": 2,
                 "strength_by_level": { 1: 61200, 2: 110200 }
             },
-
+            "Dragon": {
+                "dominance_by_level": { 3: 7, 4: 13, 5: 20, 6: 33, 7: 44, 8: 53, 9: 53 },
+                "strength_by_level": { 3: 4500, 4: 15000, 5: 42000, 6: 120000, 7: 300000, 8: 650000, 9: 1170000  }
+            },
+            "Elemental": {
+                "dominance_by_level": { 3: 3, 4: 15, 5: 21, 6: 35, 7: 45, 8: 54, 9: 54 },
+                "strength_by_level": { 3: 1900, 4: 17000, 5: 44000, 6: 130000, 7: 310000, 8: 660000, 9: 1190000 }
+            },
+            "Giant": {
+                "dominance_by_level": { 3: 8, 4: 11, 5: 23, 6: 30, 7: 43, 8: 55, 9: 55 },
+                "strength_by_level": { 3: 5200, 4: 13000, 5: 48000, 6: 110000, 7: 290000, 8: 670000, 9: 1210000 }
+            },
+            "Beast": {
+                "dominance_by_level": { 3: 6, 4: 10, 5: 22, 6: 34, 7: 41, 8: 52, 9: 52 },
+                "strength_by_level": { 3: 3900, 4: 12000, 5: 46000, 6: 130000, 7: 280000, 8: 640000, 9: 1150000 }
+            },            
         };
 
         // Класс для юнита
@@ -109,6 +136,20 @@
                 this.strength = UNIT_STATS[unitType].strength_by_level[level] || 0;
                 this.hp = this.strength * 3;
                 this.hpPerLead = Math.floor(this.hp / this.leadership);
+                this.count = 0;  // Расчитываем позже
+            }
+        }
+
+        // Класс для монстра
+        class Monster {
+            constructor(monsterType, level) {
+                this.monsterType = monsterType;
+                this.level = level;
+                this.name = `${monsterType}(${level})`;
+                this.dominance = UNIT_STATS[monsterType].dominance_by_level[level] || 0;
+                this.strength = UNIT_STATS[monsterType].strength_by_level[level] || 0;
+                this.hp = this.strength * 3;
+                this.hpPerDom = Math.floor(this.hp / this.dominance);
                 this.count = 0;  // Расчитываем позже
             }
         }
@@ -172,6 +213,32 @@
             updateLevelOptions(newUnitRow.querySelector('.unit-type')); // Обновляем уровни при добавлении
         }
 
+        // Функция для добавления нового монстра
+        function addMonster() {
+            const monsterList = document.getElementById('monsterList');
+            const newUnitRow = document.createElement('div');
+            newUnitRow.classList.add('unit-row');
+            newUnitRow.innerHTML = `
+                <select class="unit-type">
+                    <option value="Dragon">Дракон</option>
+                    <option value="Elemental">Элементаль</option>
+                    <option value="Giant">Гигант</option>
+                    <option value="Beast">Зверь</option>
+                </select>
+                <select class="unit-level">
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                </select>
+                <button class="btn btn-remove" onclick="removeUnit(this)">Удалить</button>
+            `;
+            monsterList.appendChild(newUnitRow);
+        }
+
         // Функция для обновления доступных уровней
         function updateLevelOptions(selectElement) {
             const unitType = selectElement.value;
@@ -214,12 +281,18 @@
         // Функция для расчёта состава армии
         function calculateArmy() {
             const leadership = parseInt(document.getElementById('leadership').value);
+            const dominance = parseInt(document.getElementById('dominance').value);
             if (isNaN(leadership) || leadership <= 0) {
                 alert("Пожалуйста, введите корректное значение лидерства.");
                 return;
             }
+            if (isNaN(dominance) || dominance <= 0) {
+                alert("Пожалуйста, введите корректное значение превосходства.");
+                return;
+            }
 
             const units = [];
+            const monsters = []
 
             // Получаем все юниты из списка гвардейцев
             const guardRows = document.querySelectorAll('#guardList .unit-row');
@@ -237,38 +310,60 @@
                 units.push(new Unit(unitType, unitLevel));
             });
 
+            // Получаем всех монстров 
+            const monsterRows = document.querySelectorAll('#monsterList .unit-row');
+            monsterRows.forEach(row => {
+                const unitType = row.querySelector('.unit-type').value;
+                const unitLevel = parseInt(row.querySelector('.unit-level').value);
+                monsters.push(new Monster(unitType, unitLevel));
+            });
+
             // Выполняем расчёты
-            const army = getUnitCounts(leadership, units);
+            const army = getUnitCounts(leadership, dominance, units, monsters);
 
             // Выводим результаты
-            displayResults(army, leadership);
+            displayResults(army[0], army[1], leadership, dominance);
         }
 
         // Функция для вычисления количества юнитов
-        function getUnitCounts(totalLeadership, units, step = 0, recursionDepth = 0) {
+        function getUnitCounts(totalLeadership, totalDominance, units, monsters, step = 0, recursionDepth = 0) {
             const numUnits = units.length;
-            const leadershipPerUnit = Math.floor(totalLeadership / numUnits);
-            const avgHpPerLead = Math.floor(units.reduce((sum, unit) => sum + unit.hpPerLead, 0) / numUnits) - step;
-            const squadHp = avgHpPerLead * leadershipPerUnit;
+            const numMonsters = monsters.length;
+            const leadershipPerUnit = numUnits > 0 ? Math.floor(totalLeadership / numUnits) : 0;
+            const dominancePerMonster = numMonsters > 0 ? Math.floor(totalDominance / numMonsters) : 0;
+            // Вычисляем среднее значение hp на обычный отряд по лидерству
+            const avgHpPerLead = numUnits > 0 ? Math.floor(units.reduce((sum, unit) => sum + unit.hpPerLead, 0) / numUnits) : 0;
+            // Вычисляем среднее значение hp на отряд монстров по превосходству
+            const avgHpPerDom = numMonsters > 0 ? Math.floor(monsters.reduce((sum, monster) => sum + monster.hpPerDom, 0) / numMonsters) : 0;
+            // Дальнейший расчет ведем по минимальному значению из двух вычисленных значений выше
+            const avgHpPerSquad = Math.min(avgHpPerLead, avgHpPerDom) - step;            
+            const squadHp = avgHpPerLead < avgHpPerDom ? avgHpPerSquad * leadershipPerUnit : avgHpPerSquad * dominancePerMonster;
 
             let requiredLeadership = 0;
+            let requiredDominance = 0;            
 
             // Подсчёт количества юнитов
             units.forEach(unit => {
                 unit.count = Math.floor(squadHp / unit.hp);
                 requiredLeadership += unit.count * unit.leadership;
             });
+            // Подсчёт количества монстров
+            monsters.forEach(monster => {
+                monster.count = Math.floor(squadHp / monster.hp);
+                requiredDominance += monster.count * monster.dominance;
+            });
 
-            // Если лидерства не хватает, пытаемся перерасчитать
-            if (requiredLeadership > totalLeadership) {
-                return getUnitCounts(totalLeadership, units, step + 10, recursionDepth + 1);
+            // Если лидерства или превосходства не хватает, пытаемся перерасчитать
+            if (requiredLeadership > totalLeadership || requiredDominance > totalDominance) {
+                return getUnitCounts(totalLeadership, totalDominance, units, monsters, step + 10, recursionDepth + 1);
             }
 
-            return units;
+            return [units, monsters];
         }
 
+
         // Функция для отображения результатов
-        function displayResults(units, leadership) {
+        function displayResults(units, monsters, leadership, dominance) {
             const output = document.getElementById('output');
             const armyTable = document.getElementById('armyTable');
             const tbody = armyTable.querySelector('tbody');
@@ -277,6 +372,7 @@
             tbody.innerHTML = '';
 
             let totalRequiredLeadership = 0;
+            let totalRequiredDominance = 0;
             let totalWarriors = 0;
 
             units.forEach(unit => {
@@ -296,15 +392,35 @@
                 totalRequiredLeadership += unit.count * unit.leadership;
                 totalWarriors += unit.count;
             });
+            monsters.forEach(monster => {
+                const totalHp = monster.count * monster.hp;
+                const totalStrength = monster.count * monster.strength;
+
+                // Добавляем строку в таблицу
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${monster.name}</td>
+                    <td>${monster.count}</td>
+                    <td>${totalHp}</td>
+                    <td>${totalStrength}</td>
+                `;
+                tbody.appendChild(row);
+
+                totalRequiredDominance += monster.count * monster.dominance;
+                totalWarriors += monster.count;
+            });
 
             // Показываем таблицу
             armyTable.style.display = 'table';
 
             output.innerHTML = `
-                <p>Среднее количество хп на отряд: ${Math.floor(units.reduce((sum, unit) => sum + unit.hpPerLead, 0) / units.length)}</p>
+                <p>Среднее количество хп на обычный отряд: ${Math.floor(units.reduce((sum, unit) => sum + unit.hpPerLead, 0) / units.length)}</p>
+                <p>Среднее количество хп на отряд монстров: ${Math.floor(monsters.reduce((sum, monster) => sum + monster.hpPerDom, 0) / monsters.length)}</p>
                 <p>Общее количество бойцов: ${totalWarriors}</p>
                 <p>Общее потребление лидерства: ${totalRequiredLeadership}</p>
-                <p>Ожидаемое здоровье на отряд: ${Math.floor(totalRequiredLeadership / units.length)}</p>
+                <p>Общее потребление превосходства: ${totalRequiredDominance}</p>
+                <p>Ожидаемое лидерство на обычный отряд: ${Math.floor(totalRequiredLeadership / units.length)}</p>
+                <p>Ожидаемое превосходство на отряд монстров: ${Math.floor(totalRequiredDominance / monsters.length)}</p>
             `;
         }
     </script>
